@@ -8,6 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from telegram import BotCommand, BotCommandScopeAllPrivateChats, BotCommandScopeAllGroupChats
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
@@ -27,11 +28,40 @@ from bot.handlers import (
 )
 from bot.scheduler.job_manager import restore_pending_jobs
 
+PRIVATE_COMMANDS = [
+    BotCommand("start", "شروع و راهنمای سریع ربات"),
+    BotCommand("list", "مشاهده یادآوری‌های فعال"),
+    BotCommand("help", "راهنمای کامل فرمت‌های زمانی"),
+]
+
+GROUP_COMMANDS = [
+    BotCommand("start", "آغاز استفاده از ربات در گروه"),
+    BotCommand("list", "مشاهده یادآوری‌های فعال این گروه"),
+    BotCommand("help", "راهنمای کامل فرمت‌های زمانی"),
+]
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 logger = logging.getLogger("do-it-bot")
+
+
+async def setup_bot_identity(application) -> None:
+    """Sets the public command menu and description shown in Telegram UI."""
+    commands = application.bot.set_my_commands
+    await commands(PRIVATE_COMMANDS, scope=BotCommandScopeAllPrivateChats())
+    await commands(GROUP_COMMANDS, scope=BotCommandScopeAllGroupChats())
+    await application.bot.set_my_description(
+        description=(
+            "ربات هوشمند یادآور کارها با پشتیبانی از فارسی، تقویم شمسی و زمان‌بندی طبیعی. "
+            "فقط بنویس «فردا ساعت ۶ برم دکتر»؛ من سرِ وقت یادت می‌ندازم!"
+        )
+    )
+    await application.bot.set_my_short_description(
+        short_description="یادآور کارها: فرمت طبیعی، تقویم شمسی و تکرارشونده"
+    )
+    logger.info("Bot commands menu and description are set.")
 
 
 async def post_init(application) -> None:
@@ -40,6 +70,7 @@ async def post_init(application) -> None:
     await init_db(DATABASE_PATH)
     logger.info("Restoring pending reminders from database...")
     await restore_pending_jobs(application)
+    await setup_bot_identity(application)
     logger.info("Bot is ready and listening for reminders!")
 
 

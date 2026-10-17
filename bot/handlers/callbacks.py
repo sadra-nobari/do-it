@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import jdatetime
 import pytz
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -11,6 +10,8 @@ from bot.database.db import (
     update_reminder_time,
 )
 from bot.database.models import ReminderStatus
+from bot.formatting import describe_due
+from bot.handlers.commands import HELP_TEXT, MENU_KEYBOARD, build_active_reminders_view
 from bot.scheduler.job_manager import schedule_reminder_job
 
 
@@ -22,6 +23,18 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
 
     await query.answer()
     data = query.data
+
+    # 0. Menu actions
+    if data == "show_help":
+        await query.edit_message_text(HELP_TEXT, parse_mode="Markdown", reply_markup=MENU_KEYBOARD)
+        return
+
+    if data == "show_list":
+        chat = update.effective_chat
+        if chat and query.from_user:
+            text, reply_markup = await build_active_reminders_view(query.from_user.id, chat.id)
+            await query.edit_message_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+        return
 
     # 1. Action: Done
     if data.startswith("done_"):
@@ -57,8 +70,7 @@ async def callback_query_handler(update: Update, context: ContextTypes.DEFAULT_T
         schedule_reminder_job(context.application.job_queue, reminder_id, new_utc)
 
         new_local = new_utc.astimezone(tz)
-        jdt = jdatetime.datetime.fromgregorian(datetime=new_local)
-        time_str = f"{jdt.strftime('%H:%M')} ({new_local.strftime('%H:%M')})"
+        time_str = describe_due(new_local)
 
         snooze_label = (
             f"{minutes} دقیقه"

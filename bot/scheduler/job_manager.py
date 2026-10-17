@@ -15,6 +15,7 @@ from bot.database.db import (
     update_reminder_time,
 )
 from bot.database.models import Reminder, ReminderStatus
+from bot.formatting import full_due_str
 from bot.parser.time_parser import find_next_weekday_occurrence
 
 logger = logging.getLogger(__name__)
@@ -105,8 +106,7 @@ async def execute_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     user = await get_or_create_user(reminder.user_id, reminder.chat_id)
     tz = pytz.timezone(user.timezone)
     local_dt = reminder.remind_at_utc.astimezone(tz)
-    jdt = jdatetime.datetime.fromgregorian(datetime=local_dt)
-    formatted_time = f"{jdt.strftime('%Y/%m/%d %H:%M')} ({local_dt.strftime('%Y-%m-%d %H:%M')})"
+    formatted_time = full_due_str(local_dt)
 
     recurrence_notice = ""
     if reminder.recurrence_type != "none":
@@ -122,7 +122,7 @@ async def execute_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
         f"🔔 **یادآوری انجام کار:**\n\n"
         f"📌 **{reminder.task_text}**\n\n"
-        f"⏰ موعد: `{formatted_time}`"
+        f"⏰ موعد: {formatted_time}"
         f"{recurrence_notice}"
     )
 
@@ -190,8 +190,7 @@ async def restore_pending_jobs(application) -> None:
             user = await get_or_create_user(rem.user_id, rem.chat_id)
             tz = pytz.timezone(user.timezone)
             local_dt = rem.remind_at_utc.astimezone(tz)
-            jdt = jdatetime.datetime.fromgregorian(datetime=local_dt)
-            formatted_time = f"{jdt.strftime('%Y/%m/%d %H:%M')} ({local_dt.strftime('%Y-%m-%d %H:%M')})"
+            formatted_time = full_due_str(local_dt)
 
             try:
                 await application.bot.send_message(
@@ -199,7 +198,7 @@ async def restore_pending_jobs(application) -> None:
                     text=(
                         f"⚠️ **یادآوری سپری‌شده (زمان آفلاین بودن ربات):**\n\n"
                         f"📌 **{rem.task_text}**\n\n"
-                        f"⏰ موعد اصلی: `{formatted_time}`"
+                        f"⏰ موعد اصلی: {formatted_time}"
                     ),
                     parse_mode="Markdown",
                     reply_markup=build_reminder_keyboard(rem.id),

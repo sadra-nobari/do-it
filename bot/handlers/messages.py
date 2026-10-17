@@ -1,9 +1,10 @@
-import jdatetime
 import pytz
+from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from bot.database.db import create_reminder, get_or_create_user
+from bot.formatting import full_due_str
 from bot.parser.time_parser import parse_reminder
 from bot.scheduler.job_manager import schedule_reminder_job
 
@@ -45,9 +46,8 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     # Format response
     local_dt = result.remind_at.astimezone(tz)
-    jdt = jdatetime.datetime.fromgregorian(datetime=local_dt)
-    jalali_str = jdt.strftime("%Y/%m/%d ساعت %H:%M")
-    gregorian_str = local_dt.strftime("%Y-%m-%d %H:%M")
+    now_local = datetime.now(pytz.UTC).astimezone(tz)
+    due_str = full_due_str(local_dt, now_local)
 
     recurrence_map = {
         "daily": "هر روز",
@@ -70,8 +70,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     response_text = (
         f"✅ **یادآوری با موفقیت تنظیم شد!**\n\n"
         f"📌 **کار:** {result.task}\n"
-        f"⏰ **موعد:** `{jalali_str}`\n"
-        f"🗓 **میلادی:** `{gregorian_str}`"
+        f"⏰ **موعد:** {due_str}"
         f"{rec_line}"
         f"{warning_line}"
     )
