@@ -54,7 +54,7 @@ cp .env.example .env
 سپس داخل فایل `.env`، توکن خود را قرار دهید:
 
 ```env
-TELEGRAM_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ
+TELEGRAM_BOT_TOKEN=your_bot_token_here
 DEFAULT_TIMEZONE=Asia/Tehran
 DATABASE_PATH=do_it.db
 

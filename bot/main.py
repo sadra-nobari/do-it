@@ -50,7 +50,7 @@ def main() -> None:
         print("❌ خطا: توکن ربات تلگرام (TELEGRAM_BOT_TOKEN) تنظیم نشده است!")
         print("لطفاً توکن ربات خود را در فایل .env یا به صورت متغیر محیطی وارد کنید.")
         print("مثال:")
-        print("TELEGRAM_BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ")
+        print("TELEGRAM_BOT_TOKEN=your_bot_token_here")
         print("=" * 60 + "\n")
         sys.exit(1)
 
